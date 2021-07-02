@@ -11,18 +11,7 @@ var cors = require("cors");
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 
-// Delivery man Module's router
-var deliveryManRouter = require("./routes/deliveryman");
 
-//Package and Delivery Module's router
-var vehiculeRouter = require("./routes/vehicule");
-var packageRouter = require("./routes/Package");
-var deliveryRouter = require("./routes/delivery");
-
-//Customer & Entreprise Module's routers
-var customerRouter = require("./routes/customers");
-var entrepriseRouter = require("./routes/entreprise");
-var paymentRouter = require("./routes/payment");
 
 //Users Router
 var userRouter = require("./routes/users");
@@ -55,17 +44,12 @@ app.use("/public", express.static(path.join(__dirname, "public")));
 
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
-app.use("/deliveryman", deliveryManRouter);
 
 //Package & delivery Module's middlewares
-app.use("/vehicle", vehiculeRouter);
-app.use("/Package", packageRouter);
-app.use("/delivery", deliveryRouter);
+
 
 //Customer & Entreprise Module's middlewares
-app.use("/customers", customerRouter);
-app.use("/entreprises", entrepriseRouter);
-app.use("/payments", paymentRouter);
+
 
 //User middlewares
 app.use("/users", usersRouter);
@@ -85,7 +69,6 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.render("error");
 });
-
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header(

@@ -1,9 +1,7 @@
 var express = require("express");
 var router = express.Router();
 var User = require("../models/User");
-var Customer = require("../models/customer");
-var Entreprise = require("../models/entreprise");
-var ResetCode = require("../models/ResetCode");
+
 var { SendResetPasswordEmail } = require("../mailer");
 var { ContactUsEmail } = require("../mailer");
 var XLSX = require('xlsx');
@@ -11,19 +9,8 @@ var bcrypt = require("bcrypt");
 const { OAuth2Client } = require("google-auth-library");
 const fetch = require("node-fetch");
 const axios = require('axios');
-
-
-
-
-
-
-
-
-
-
 var multer = require("multer");
 var path = require("path");
-const Signature = require("../models/signature");
 var bcrypt = require("bcrypt");
 router.use(express.static(__dirname + "./public/"));
 var cors = require("cors");
@@ -89,53 +76,6 @@ router.get("/test", function (req, res, next) {
   );
 });
 
-/** LOGIN WITH GOOGLE **/
-router.get("/loginWithGoogle", function (req, res, next) {
-  const tokenId = req.query.tokenId;
-  client
-    .verifyIdToken({
-      idToken: tokenId,
-      audience:
-        "991500253592-o6bt8lpeuisqg2fseal9uqhfqvft68k5.apps.googleusercontent.com",
-    })
-    .then((response) => {
-      const { email_verified, name, email } = response.getPayload();
-      if (email_verified) {
-        User.find({ Email: email }, async function (err, data) {
-          if (err) throw err;
-          if (data.length === 0) {
-            return res.send("UserNotFound");
-          } else {
-            res.json(data);
-          }
-        });
-      }
-    });
-});
-
-/** LOGIN WITH Facebook **/
-router.get("/loginWithFacebook", function (req, res, next) {
-  const accessToken = req.query.accessToken;
-  const userID = req.query.userID;
-  let urlGraphFacebook = `https://graph.facebook.com/v2.11/${userID}/?fields=id,name,email&access_token=${accessToken}`;
-  fetch(urlGraphFacebook, {
-    method: "GET",
-  })
-    .then((res) => res.json())
-    .then((json) => {
-      const { email, name } = json;
-      if (email != null) {
-        User.find({ Email: email }, async function (err, data) {
-          if (err) throw err;
-          if (data.length === 0) {
-            return res.send("UserNotFound");
-          } else {
-            res.json(data);
-          }
-        });
-      }
-    });
-});
 
 /** Add User (Post Man)**/
 
@@ -204,69 +144,6 @@ router.post("/resetPassword", async function (req, res, next) {
   }
 });
 
-/** Reset User Password Confirmation **/
-router.post("/resetPassword/confirmation", async function (req, res, next) {
-  const { Code, id, password } = req.body;
-  console.log(Code, id, password);
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  try {
-    const resetCode = await ResetCode.find({ Code: Code });
-    if (resetCode.length === 0) {
-      console.log("WrongCode");
-      return res.send("WrongCode");
-    } else {
-      const user = await User.find({ Id: id });
-      if (user.length === 0) {
-        console.log("Send Again");
-        return res.send("SendAgain");
-      } else {
-        await ResetCode.deleteOne({ Code: Code });
-        if (user[0].Role === "Customer") {
-          const newUser = new User({
-            Id: id,
-            Username: user[0].Username,
-            Password: hashedPassword,
-            Email: user[0].Email,
-            Role: "Customer",
-          });
-          await User.deleteOne({ Id: id });
-          await User.create(newUser);
-          Customer.findByIdAndUpdate(
-            id,
-            { Password: hashedPassword },
-            function (err, data) {
-              if (err) throw err;
-              console.log("UPDATED");
-              return res.send("PasswordUpdated");
-            }
-          );
-        } else {
-          const newUser = new User({
-            Id: id,
-            Username: user[0].Username,
-            Password: hashedPassword,
-            Email: user[0].Email,
-            Role: "Company",
-          });
-          await User.deleteOne({ Id: id });
-          await User.create(newUser);
-          Entreprise.findByIdAndUpdate(
-            id,
-            { Password: hashedPassword },
-            function (err, data) {
-              if (err) throw err;
-              console.log("UPDATED");
-              return res.send("PasswordUpdated");
-            }
-          );
-        }
-      }
-    }
-  } catch (error) {
-    res.send(error);
-  }
-});
 
 /** Delete All Users **/
 router.delete("/remove", function (req, res, next) {
@@ -338,18 +215,7 @@ router.put("/putuser/:id", async function (req, res) {
   });
 });
 
-router.get("/EmailFace", function (req, res, next) {
-  const email = req.query.email;
 
-  User.find({ Email: email }, async function (err, data) {
-    if (err) throw err;
-    if (data.length === 0) {
-      return res.send("UserNotFound");
-    } else {
-      res.json(data);
-    }
-  });
-});
 
 
 
@@ -392,11 +258,6 @@ else (console.log("undef"))
   res.send("Done");
 });
 
-/** Contact Us **/
-router.post("/contactUs", async function (req, res, next) {
-  const { Email, Username, Subject, Message } = req.body;
-  ContactUsEmail(Email, Username, Subject, Message);
-  res.send("EmailSended");
-});
+
 
 module.exports = router;
