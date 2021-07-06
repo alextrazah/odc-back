@@ -10,6 +10,7 @@ var Odc = new Schema(
     Email: String,
     Color: String,
     Employ: Boolean,
+    Phone: String,
     notes: String,
   },
   { timestamps: true }

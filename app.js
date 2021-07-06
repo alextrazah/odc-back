@@ -13,7 +13,7 @@ var usersRouter = require("./routes/users");
 var odcRouter = require("./routes/odc");
 
 //Users Router
-var userRouter = require("./routes/users");
+var mobileRouter = require("./routes/mobile");
 
 var app = express();
 require("dotenv").config();
@@ -51,6 +51,7 @@ app.use("/users", usersRouter);
 //User middlewares
 app.use("/users", usersRouter);
 app.use("/odc", odcRouter);
+app.use("/mobile", mobileRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
