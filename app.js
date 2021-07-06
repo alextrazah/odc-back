@@ -10,8 +10,7 @@ var cors = require("cors");
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
-
-
+var odcRouter = require("./routes/odc");
 
 //Users Router
 var userRouter = require("./routes/users");
@@ -47,12 +46,11 @@ app.use("/users", usersRouter);
 
 //Package & delivery Module's middlewares
 
-
 //Customer & Entreprise Module's middlewares
-
 
 //User middlewares
 app.use("/users", usersRouter);
+app.use("/odc", odcRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

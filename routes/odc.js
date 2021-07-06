@@ -1,14 +1,15 @@
 var express = require("express");
 var router = express.Router();
 var User = require("../models/User");
+var Odc = require("../models/Odc");
 
 var { SendResetPasswordEmail } = require("../mailer");
 var { ContactUsEmail } = require("../mailer");
-var XLSX = require('xlsx');
+var XLSX = require("xlsx");
 var bcrypt = require("bcrypt");
 const { OAuth2Client } = require("google-auth-library");
 const fetch = require("node-fetch");
-const axios = require('axios');
+const axios = require("axios");
 var multer = require("multer");
 var path = require("path");
 var bcrypt = require("bcrypt");
@@ -76,7 +77,6 @@ router.get("/test", function (req, res, next) {
   );
 });
 
-
 /** Add User (Post Man)**/
 
 router.post("/", async function (req, res, next) {
@@ -98,25 +98,18 @@ router.post("/", async function (req, res, next) {
 });
 
 router.post("/adduser", async function (req, res, next) {
-  const password = req.body.Password;
-  var roles = "DRE";
-  if(req.body.Role== undefined){
-    roles="DRE";
-  }
-  else roles=req.body.Role
-  console.log(req.body.Role);
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const user = new User({
+  const odc = new Odc({
     Firstname: req.body.Firstname,
     Lastname: req.body.Lastname,
-    Password: hashedPassword,
+    Sex: req.body.Sex,
     Email: req.body.Email,
-    Role: roles,
-    Active: 1,
+    Color: req.body.Color,
+    Employ: req.body.Employ,
+    Notes: req.body.Notes,
   });
+  console.log(req.body);
   try {
-    user.save();
+    odc.save();
     res.send("Ajout");
   } catch (error) {
     res.send(error);
@@ -145,7 +138,6 @@ router.post("/resetPassword", async function (req, res, next) {
     res.send(error);
   }
 });
-
 
 /** Delete All Users **/
 router.delete("/remove", function (req, res, next) {
@@ -196,19 +188,18 @@ router.put("/dell/:id", async function (req, res) {
 router.put("/putuser/:id", async function (req, res) {
   const password = req.body.Password;
   var roles = "DRE";
-  if(req.body.Role==""){
-    roles="DRE";
-  }
-  else roles=req.body.Role
+  if (req.body.Role == "") {
+    roles = "DRE";
+  } else roles = req.body.Role;
   const hashedPassword = await bcrypt.hash(password, 10);
   const obj = JSON.parse(JSON.stringify(req.body));
   const newuser = {
     Firstname: obj.Firstname,
     Lastname: obj.Lastname,
-    Password:hashedPassword,
+    Password: hashedPassword,
     Email: obj.Email,
     Role: roles,
-    Active: 1
+    Active: 1,
   };
   console.log(obj);
   User.findByIdAndUpdate(req.params.id, newuser, function (err) {
@@ -217,59 +208,55 @@ router.put("/putuser/:id", async function (req, res) {
   });
 });
 
-
-
-
-
-router.post("/addxl/:email/:nom/:prenom/:pass",  async function (req, res, next) {
-  const hashedPassword = await bcrypt.hash(req.params.pass, 10);
-  async function init(id,user) {
-    await sleep(3500);
-    try {
-      user.save();
-    } catch (error) {
-      res.send(error);
+router.post(
+  "/addxl/:email/:nom/:prenom/:pass",
+  async function (req, res, next) {
+    const hashedPassword = await bcrypt.hash(req.params.pass, 10);
+    async function init(id, user) {
+      await sleep(3500);
+      try {
+        user.save();
+      } catch (error) {
+        res.send(error);
+      }
+      console.log(id);
     }
-    console.log(id);
-  }
-  
-  function sleep(ms) {
-    return new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
-  }  
- if(req.params.email !="undefined"){
-  const params = {
-    access_key: 'c997b63a4dd56e42fd1a4c581d378f6d',
-    email: req.params.email,
-    smpt:1,
-    format:1
-  }
-  await axios.get('http://apilayer.net/api/check', {params})
-  .then(response => {
-     
-    console.log(response.data.smtp_check);
-    if(response.data.smtp_check==true){
-  const user = new User({
-    Firstname:req.params.nom,
-    Lastname: req.params.prenom,
-    Password: hashedPassword,
-    Email: req.params.email,
-    Role: "Admin",
-    Active: 1,
-  });
 
-  
-init(req.params.nom,user);
+    function sleep(ms) {
+      return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+      });
     }
-  }).catch(error => {
-    console.log(error);
-  });
-}
-else (console.log("undef"))
-  res.send("Done");
-});
+    if (req.params.email != "undefined") {
+      const params = {
+        access_key: "c997b63a4dd56e42fd1a4c581d378f6d",
+        email: req.params.email,
+        smpt: 1,
+        format: 1,
+      };
+      await axios
+        .get("http://apilayer.net/api/check", { params })
+        .then((response) => {
+          console.log(response.data.smtp_check);
+          if (response.data.smtp_check == true) {
+            const user = new User({
+              Firstname: req.params.nom,
+              Lastname: req.params.prenom,
+              Password: hashedPassword,
+              Email: req.params.email,
+              Role: "Admin",
+              Active: 1,
+            });
 
-
+            init(req.params.nom, user);
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    } else console.log("undef");
+    res.send("Done");
+  }
+);
 
 module.exports = router;
